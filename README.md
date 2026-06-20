@@ -293,6 +293,12 @@ Contributions are welcome! Please follow these guidelines:
 - Add tests for new features
 - Update documentation as needed
 
+## Support
+
+If you find this project useful, consider supporting its development:
+
+[☕ Buy me a coffee](https://www.buymeacoffee.com/ekowdd89)
+
 ## License
 
 MIT License - see LICENSE file for details.
