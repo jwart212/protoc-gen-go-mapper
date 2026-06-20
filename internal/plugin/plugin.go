@@ -235,7 +235,8 @@ func (p *Plugin) Generate(req *GenerateRequest, w io.Writer) error {
 				if helper.Body != "" {
 					allCode += "func " + helper.Name + " " + helper.Body + "\n"
 				} else if helper.Signature != "" {
-					allCode += "func " + helper.Name + " " + helper.Signature + " { /* TODO: implement */ }\n"
+					// Skip helpers with only signature - require Body to be non-empty
+					fmt.Printf("Warning: helper %q has signature but no body, skipping\n", helper.Name)
 				}
 			}
 			allCode += "\n"

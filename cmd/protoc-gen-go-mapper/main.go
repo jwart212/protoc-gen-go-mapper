@@ -17,13 +17,13 @@ func main() {
 	// Read CodeGeneratorRequest from stdin
 	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
-		io.WriteString(os.Stderr, err.Error())
+		io.WriteString(os.Stderr, "protoc-gen-go-mapper: error reading stdin: "+err.Error()+"\n")
 		os.Exit(1)
 	}
 
 	var req pluginpb.CodeGeneratorRequest
 	if err := proto.Unmarshal(data, &req); err != nil {
-		io.WriteString(os.Stderr, err.Error())
+		io.WriteString(os.Stderr, "protoc-gen-go-mapper: error unmarshaling request: "+err.Error()+"\n")
 		os.Exit(1)
 	}
 
@@ -70,7 +70,7 @@ func main() {
 			}
 		}
 		if fileProto == nil {
-			io.WriteString(os.Stderr, "File not found: "+fileName)
+			io.WriteString(os.Stderr, "protoc-gen-go-mapper: file descriptor not found: "+fileName+"\n")
 			os.Exit(1)
 		}
 
@@ -81,7 +81,7 @@ func main() {
 		var buf bytes.Buffer
 		err := p.Generate(genReq, &buf)
 		if err != nil {
-			io.WriteString(os.Stderr, err.Error())
+			io.WriteString(os.Stderr, "protoc-gen-go-mapper: error generating code for "+fileName+": "+err.Error()+"\n")
 			os.Exit(1)
 		}
 
@@ -104,7 +104,7 @@ func main() {
 	// Write response to stdout
 	respData, err := proto.Marshal(&resp)
 	if err != nil {
-		io.WriteString(os.Stderr, err.Error())
+		io.WriteString(os.Stderr, "protoc-gen-go-mapper: error marshaling response: "+err.Error()+"\n")
 		os.Exit(1)
 	}
 

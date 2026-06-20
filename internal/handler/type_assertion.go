@@ -46,6 +46,8 @@ func (h *TypeAssertionHandler) Match(field *schema.Field, dbTypeName string) boo
 // GenerateToProto generates the type assertion code for DB -> Proto conversion.
 // Returns just the field name with type assertion, without variable prefix.
 // Example: "Path: .Path.([]string)" - caller should prepend variable name
+// Note: This generates a type assertion that will panic at runtime if the type doesn't match.
+// Users should ensure the DB field type matches the assertType configuration.
 func (h *TypeAssertionHandler) GenerateToProto(field *schema.Field, dbFieldName, protoFieldName, dbTypeName string) (string, error) {
 	if h.assertType == "" {
 		return "", fmt.Errorf("assertType not configured for TypeAssertionHandler")

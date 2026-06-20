@@ -69,8 +69,10 @@ func LoadTypeConversions(cfgs []config.TypeConversionConfig, aliases map[string]
 
 		// Ensure we have the required fields
 		if toProtoExpr == "" {
-			fmt.Printf("Warning: type conversion missing toProtoExpr, skipping\n")
-			continue
+			return nil, fmt.Errorf("type conversion missing toProtoExpr for proto_type=%q, db_type=%q", protoType, dbType)
+		}
+		if toDBExpr == "" {
+			return nil, fmt.Errorf("type conversion missing toDBExpr for proto_type=%q, db_type=%q", protoType, dbType)
 		}
 
 		// Create handler with patterns if configured
