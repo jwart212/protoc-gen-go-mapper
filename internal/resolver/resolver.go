@@ -3,7 +3,7 @@ package resolver
 import (
 	"strings"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/types"
+	"github.com/jwart212/protoc-gen-go-mapper/pkg/types"
 )
 
 // Resolver maps protobuf types to database-specific types.

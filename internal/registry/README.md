@@ -32,7 +32,7 @@ func (r *Registry) Resolve(src, dst TypeInfo) (Converter, error)
 ## Usage Example
 
 ```go
-import "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/registry"
+import "github.com/jwart212/protoc-gen-go-mapper/internal/registry"
 
 r := registry.New()
 r.Register(ScalarConverter{})

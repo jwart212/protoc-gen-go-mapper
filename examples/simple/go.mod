@@ -1,4 +1,4 @@
-module gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/simple
+module github.com/jwart212/protoc-gen-go-mapper/examples/simple
 
 go 1.24.0
 

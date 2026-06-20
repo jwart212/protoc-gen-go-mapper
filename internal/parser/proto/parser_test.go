@@ -3,7 +3,7 @@ package proto
 import (
 	"testing"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/schema"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/schema"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )

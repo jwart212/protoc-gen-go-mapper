@@ -25,7 +25,7 @@ func (t *Template) Execute(name string, data interface{}) (string, error)
 ## Usage Example
 
 ```go
-import "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/template"
+import "github.com/jwart212/protoc-gen-go-mapper/internal/template"
 
 tmpl := template.New()
 tmpl.Load("mapper", "func To{{.Name}}(src {{.Type}}) {{.Type}} { return src }")

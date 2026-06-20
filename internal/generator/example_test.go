@@ -3,9 +3,9 @@ package generator_test
 import (
 	"fmt"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/generator"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/graph"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/schema"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/generator"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/graph"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/schema"
 )
 
 func ExampleNew() {

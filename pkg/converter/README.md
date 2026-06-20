@@ -42,7 +42,7 @@ type MappingField struct {
 ## Usage Example
 
 ```go
-import "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/converter"
+import "github.com/jwart212/protoc-gen-go-mapper/pkg/converter"
 
 type MyConverter struct{}
 

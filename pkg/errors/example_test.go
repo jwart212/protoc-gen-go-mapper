@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	mappererrors "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/errors"
+	mappererrors "github.com/jwart212/protoc-gen-go-mapper/pkg/errors"
 )
 
 func ExampleErrNoConverterFound() {

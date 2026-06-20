@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/advanced/internal/cmd"
+	"github.com/jwart212/protoc-gen-go-mapper/examples/advanced/internal/cmd"
 )
 
 func main() {

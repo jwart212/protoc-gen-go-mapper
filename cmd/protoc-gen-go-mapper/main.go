@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/config"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/plugin"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/config"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/plugin"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"

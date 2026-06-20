@@ -22,7 +22,7 @@ func (p *Parser) ParseFile() (*schema.Model, error)
 ## Usage Example
 
 ```go
-import "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/parser/proto"
+import "github.com/jwart212/protoc-gen-go-mapper/internal/parser/proto"
 
 p := proto.New()
 model, err := p.ParseFile()

@@ -444,7 +444,7 @@ const file_ecommerce_proto_rawDesc = "" +
 	"\x17ORDER_STATUS_PROCESSING\x10\x02\x12\x18\n" +
 	"\x14ORDER_STATUS_SHIPPED\x10\x03\x12\x1a\n" +
 	"\x16ORDER_STATUS_DELIVERED\x10\x04\x12\x1a\n" +
-	"\x16ORDER_STATUS_CANCELLED\x10\x05BCZAgitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/complex/gen;genb\x06proto3"
+	"\x16ORDER_STATUS_CANCELLED\x10\x05BCZAgithub.com/jwart212/protoc-gen-go-mapper/examples/complex/gen;genb\x06proto3"
 
 var (
 	file_ecommerce_proto_rawDescOnce sync.Once

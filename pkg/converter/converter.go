@@ -1,6 +1,6 @@
 package converter
 
-import "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/types"
+import "github.com/jwart212/protoc-gen-go-mapper/pkg/types"
 
 // MappingField represents a field mapping for code generation.
 type MappingField struct {

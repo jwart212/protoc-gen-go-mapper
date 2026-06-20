@@ -6,7 +6,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/errors"
+	"github.com/jwart212/protoc-gen-go-mapper/pkg/errors"
 )
 
 // Config represents the mapper.yaml configuration.

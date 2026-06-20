@@ -4,9 +4,9 @@ import (
 	"context"
 	"log"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/advanced/internal/gen/item_categoriespb"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/advanced/internal/postgres"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/advanced/pkg/utils"
+	"github.com/jwart212/protoc-gen-go-mapper/examples/advanced/internal/gen/item_categoriespb"
+	"github.com/jwart212/protoc-gen-go-mapper/examples/advanced/internal/postgres"
+	"github.com/jwart212/protoc-gen-go-mapper/examples/advanced/pkg/utils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

@@ -4,10 +4,10 @@ import (
 	"sort"
 	"strings"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/graph"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/schema"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/template"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/converter"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/graph"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/schema"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/template"
+	"github.com/jwart212/protoc-gen-go-mapper/pkg/converter"
 )
 
 // Generator produces Go mapping code from Mapper graphs.

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/resolver"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/schema"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/types"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/resolver"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/schema"
+	"github.com/jwart212/protoc-gen-go-mapper/pkg/types"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 

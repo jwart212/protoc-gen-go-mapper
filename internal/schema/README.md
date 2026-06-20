@@ -65,7 +65,7 @@ Field ordering in generated code MUST follow Field.FieldNumber ascending, which 
 ## Usage Example
 
 ```go
-import "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/schema"
+import "github.com/jwart212/protoc-gen-go-mapper/internal/schema"
 
 msg := &schema.Message{
     Name: "User",

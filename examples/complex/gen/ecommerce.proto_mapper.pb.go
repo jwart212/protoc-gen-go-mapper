@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/complex/db"
+	"github.com/jwart212/protoc-gen-go-mapper/examples/complex/db"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

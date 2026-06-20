@@ -1,4 +1,4 @@
-module gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper
+module github.com/jwart212/protoc-gen-go-mapper
 
 go 1.24
 

@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/simple/db"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/simple/gen"
+	"github.com/jwart212/protoc-gen-go-mapper/examples/simple/db"
+	"github.com/jwart212/protoc-gen-go-mapper/examples/simple/gen"
 )
 
 func main() {

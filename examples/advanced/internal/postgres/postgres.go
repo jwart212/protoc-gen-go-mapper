@@ -8,7 +8,7 @@ import (
 	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/advanced/internal/postgres/sqlc"
+	"github.com/jwart212/protoc-gen-go-mapper/examples/advanced/internal/postgres/sqlc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 )

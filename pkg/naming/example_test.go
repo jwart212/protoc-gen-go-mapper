@@ -3,7 +3,7 @@ package naming_test
 import (
 	"fmt"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/naming"
+	"github.com/jwart212/protoc-gen-go-mapper/pkg/naming"
 )
 
 func ExampleToCamelCase() {

@@ -52,7 +52,7 @@ Any validation failure returns ErrInvalidConfig wrapped with the offending field
 ## Usage Example
 
 ```go
-import "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/config"
+import "github.com/jwart212/protoc-gen-go-mapper/internal/config"
 
 cfg, err := config.Load("mapper.yaml")
 if err != nil {

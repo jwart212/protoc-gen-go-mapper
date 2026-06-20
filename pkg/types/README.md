@@ -47,7 +47,7 @@ Kind implements String() for human-readable output in error messages and logging
 ## Usage Example
 
 ```go
-import "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/types"
+import "github.com/jwart212/protoc-gen-go-mapper/pkg/types"
 
 // Create a TypeInfo for a UUID field
 uuidType := types.TypeInfo{

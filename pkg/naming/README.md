@@ -49,7 +49,7 @@ ToDBTableName("User") // "user"
 ## Usage Example
 
 ```go
-import "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/naming"
+import "github.com/jwart212/protoc-gen-go-mapper/pkg/naming"
 
 // Convert database column to protobuf field
 protoField := naming.ToCamelCase("user_id") // "userId"

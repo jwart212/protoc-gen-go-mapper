@@ -5,13 +5,13 @@ import (
 	"io"
 	"strings"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/config"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/generator"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/graph"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/parser/proto"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/registry"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/resolver"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/schema"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/config"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/generator"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/graph"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/parser/proto"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/registry"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/resolver"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/schema"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 

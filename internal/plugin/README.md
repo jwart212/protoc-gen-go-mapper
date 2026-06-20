@@ -49,7 +49,7 @@ type GenerateRequest struct {
 ## Usage Example
 
 ```go
-import "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/plugin"
+import "github.com/jwart212/protoc-gen-go-mapper/internal/plugin"
 
 cfg, err := config.Load("mapper.yaml")
 if err != nil {

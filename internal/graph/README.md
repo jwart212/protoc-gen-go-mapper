@@ -55,7 +55,7 @@ Build-time validation occurs here - if no converter is found, the error is retur
 ## Usage Example
 
 ```go
-import "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/graph"
+import "github.com/jwart212/protoc-gen-go-mapper/internal/graph"
 
 m := graph.NewMapper("User", "User")
 r := registry.New()

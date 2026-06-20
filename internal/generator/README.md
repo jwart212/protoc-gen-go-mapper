@@ -38,7 +38,7 @@ The generator ensures deterministic output by:
 ## Usage Example
 
 ```go
-import "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/generator"
+import "github.com/jwart212/protoc-gen-go-mapper/internal/generator"
 
 g := generator.New()
 code, err := g.Generate(message, protoToDBMapper, dbToProtoMapper)

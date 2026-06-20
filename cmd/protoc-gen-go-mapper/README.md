@@ -5,7 +5,7 @@ protoc-gen-go-mapper is a protoc plugin that generates type-safe mapping functio
 ## Installation
 
 ```bash
-go install gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/cmd/protoc-gen-go-mapper@latest
+go install github.com/jwart212/protoc-gen-go-mapper/cmd/protoc-gen-go-mapper@latest
 ```
 
 ## Usage

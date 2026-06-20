@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/complex/gen"
+	"github.com/jwart212/protoc-gen-go-mapper/examples/complex/gen"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

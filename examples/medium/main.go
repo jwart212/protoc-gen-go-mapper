@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/medium/gen"
+	"github.com/jwart212/protoc-gen-go-mapper/examples/medium/gen"
 )
 
 func main() {

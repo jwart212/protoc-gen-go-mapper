@@ -111,7 +111,7 @@ const file_user_proto_rawDesc = "" +
 	"\x03age\x18\x04 \x01(\x05H\x00R\x03age\x88\x01\x01\x12\x1b\n" +
 	"\x06active\x18\x05 \x01(\bH\x01R\x06active\x88\x01\x01B\x06\n" +
 	"\x04_ageB\t\n" +
-	"\a_activeBBZ@gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/simple/gen;genb\x06proto3"
+	"\a_activeBBZ@github.com/jwart212/protoc-gen-go-mapper/examples/simple/gen;genb\x06proto3"
 
 var (
 	file_user_proto_rawDescOnce sync.Once

@@ -3,8 +3,8 @@ package schema_test
 import (
 	"fmt"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/schema"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/types"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/schema"
+	"github.com/jwart212/protoc-gen-go-mapper/pkg/types"
 )
 
 func ExampleMessage() {

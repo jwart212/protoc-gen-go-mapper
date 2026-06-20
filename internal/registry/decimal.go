@@ -3,8 +3,8 @@ package registry
 import (
 	"fmt"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/converter"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/types"
+	"github.com/jwart212/protoc-gen-go-mapper/pkg/converter"
+	"github.com/jwart212/protoc-gen-go-mapper/pkg/types"
 )
 
 // DecimalConverter handles decimal.Decimal ↔ string conversions.

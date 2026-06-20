@@ -3,8 +3,8 @@ package generator
 import (
 	"testing"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/graph"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/schema"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/graph"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/schema"
 )
 
 func TestNew(t *testing.T) {

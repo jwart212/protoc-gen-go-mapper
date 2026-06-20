@@ -18,7 +18,7 @@ protoc-gen-go-mapper is a compiler-style plugin for protoc that generates bidire
 ## Installation
 
 ```bash
-go install gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/cmd/protoc-gen-go-mapper@latest
+go install github.com/jwart212/protoc-gen-go-mapper/cmd/protoc-gen-go-mapper@latest
 ```
 
 ## Usage

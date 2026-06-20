@@ -1,6 +1,6 @@
 package schema
 
-import "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/types"
+import "github.com/jwart212/protoc-gen-go-mapper/pkg/types"
 
 // Field represents a single field in a protobuf message.
 type Field struct {

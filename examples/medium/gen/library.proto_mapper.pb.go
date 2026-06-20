@@ -6,7 +6,7 @@ import (
 	"database/sql"
 	"time"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/medium/db"
+	"github.com/jwart212/protoc-gen-go-mapper/examples/medium/db"
 )
 
 // Helper functions for nullable conversions

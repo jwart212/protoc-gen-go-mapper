@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	mappererrors "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/errors"
+	mappererrors "github.com/jwart212/protoc-gen-go-mapper/pkg/errors"
 )
 
 func TestValidate(t *testing.T) {

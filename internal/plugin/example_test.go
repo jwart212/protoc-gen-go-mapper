@@ -3,8 +3,8 @@ package plugin_test
 import (
 	"fmt"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/config"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/plugin"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/config"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/plugin"
 )
 
 func ExampleNew() {

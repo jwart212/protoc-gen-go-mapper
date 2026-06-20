@@ -4,7 +4,7 @@ package ecommerce;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/complex/gen;gen";
+option go_package = "github.com/jwart212/protoc-gen-go-mapper/examples/complex/gen;gen";
 
 enum OrderStatus {
   ORDER_STATUS_UNSPECIFIED = 0;

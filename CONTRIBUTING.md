@@ -6,7 +6,7 @@ Thank you for your interest in contributing to protoc-gen-go-mapper!
 
 1. Clone the repository:
 ```bash
-git clone https://gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper.git
+git clone https://github.com/jwart212/protoc-gen-go-mapper.git
 cd protoc-gen-go-mapper
 ```
 

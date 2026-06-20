@@ -29,7 +29,7 @@ Returned by config validation before parsing begins when the mapper.yaml configu
 ```go
 import (
     "fmt"
-    "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/pkg/errors"
+    "github.com/jwart212/protoc-gen-go-mapper/pkg/errors"
 )
 
 // Wrap sentinel error with context

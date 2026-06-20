@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/advanced/internal/postgres/sqlc"
+	"github.com/jwart212/protoc-gen-go-mapper/examples/advanced/internal/postgres/sqlc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

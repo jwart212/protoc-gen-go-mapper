@@ -30,7 +30,7 @@ func (r *Resolver) Resolve(protoType types.TypeInfo) types.TypeInfo
 ## Usage Example
 
 ```go
-import "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/resolver"
+import "github.com/jwart212/protoc-gen-go-mapper/internal/resolver"
 
 r := resolver.New("pgx")
 dbType := r.Resolve(protoType)

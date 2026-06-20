@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package example;
 
-option go_package = "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/gen";
+option go_package = "github.com/jwart212/protoc-gen-go-mapper/examples/gen";
 
 message User {
   int32 id = 1;

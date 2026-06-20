@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/config"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/config"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -15,8 +15,8 @@ func TestPluginIntegration(t *testing.T) {
 		Version:  "v1",
 		Database: "sqlc",
 		Package: config.Package{
-			Proto: "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/testdata/gen",
-			DB:    "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/testdata/db",
+			Proto: "github.com/jwart212/protoc-gen-go-mapper/testdata/gen",
+			DB:    "github.com/jwart212/protoc-gen-go-mapper/testdata/db",
 		},
 	}
 

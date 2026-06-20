@@ -3,7 +3,7 @@ package proto_test
 import (
 	"fmt"
 
-	"gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/internal/parser/proto"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/parser/proto"
 )
 
 func ExampleNew() {

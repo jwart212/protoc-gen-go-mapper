@@ -272,7 +272,7 @@ const file_library_proto_rawDesc = "" +
 	"\b_book_idB\t\n" +
 	"\a_ratingB\n" +
 	"\n" +
-	"\b_commentBBZ@gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/medium/gen;genb\x06proto3"
+	"\b_commentBBZ@github.com/jwart212/protoc-gen-go-mapper/examples/medium/gen;genb\x06proto3"
 
 var (
 	file_library_proto_rawDescOnce sync.Once
