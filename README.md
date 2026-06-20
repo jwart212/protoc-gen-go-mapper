@@ -1,5 +1,9 @@
 # protoc-gen-go-mapper
 
+[![Go Version](https://img.shields.io/badge/Go-1.25.0+-00ADD8?style=flat&logo=go)](https://golang.org)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+
 A protoc plugin that generates type-safe mapping functions between protobuf messages and database models.
 
 ## Overview
@@ -14,6 +18,23 @@ protoc-gen-go-mapper is a compiler-style plugin for protoc that generates bidire
 - **Build-time validation**: All converter resolution happens during generation
 - **Extensible**: Easy to add custom converters via the registry
 - **No runtime reflection**: Pure Go code generation
+- **Zero-config mode**: Automatic type detection with generic converters
+- **Self-contained**: Generated code includes inline converters, no external dependencies
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Dependencies](#dependencies)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+- [Advanced Configuration](#advanced-configuration)
+- [Examples](#examples)
+- [Development](#development)
+- [Contributing](#contributing)
+- [Support](#support)
+- [License](#license)
 
 ## Dependencies
 
@@ -21,11 +42,19 @@ protoc-gen-go-mapper is a compiler-style plugin for protoc that generates bidire
 
 - **gopkg.in/yaml.v3** v3.0.1 - YAML configuration parsing
 - **google.golang.org/protobuf** v1.36.11 - Protocol Buffers support
+- **github.com/jackc/pgx/v5** v5.10.0 - PostgreSQL driver and types (for SQLC/PGX support)
+
+### Database-Specific Dependencies
+
+The generated code works with the following database libraries (not required by the plugin itself):
+
+- **SQLC** - SQL query code generator (for SQLC mode)
+- **github.com/jackc/pgx/v5** - PostgreSQL driver (for PGX mode)
+- **database/sql** - Standard database SQL interface (for database_sql mode)
 
 ### Indirect Dependencies
 
 - **github.com/google/uuid** v1.6.0 - UUID parsing and generation
-- **github.com/jackc/pgx/v5** v5.10.0 - PostgreSQL driver and types
 
 ### Go Version
 
@@ -48,7 +77,7 @@ go mod tidy
 
 ## Installation
 
-### From GitHub
+### Quick Install
 
 ```bash
 go install github.com/jwart212/protoc-gen-go-mapper/cmd/protoc-gen-go-mapper@latest
@@ -62,30 +91,24 @@ cd protoc-gen-go-mapper
 go install ./cmd/protoc-gen-go-mapper
 ```
 
-## Usage
+## Quick Start
 
-### Basic Setup
-
-1. Create a `mapper.yaml` configuration file:
+### 1. Create a simple mapper.yaml
 
 ```yaml
 version: v1
 database: sqlc
-db_package: your-project/internal/db
+db_package: your-project/internal/postgres/sqlc
 package:
   proto: internal/gen
-  db: internal/db
+  db: internal/postgres
 type_mappings:
   User: DbUser
-  CreateUserRequest: CreateUserParams
-  UpdateUserRequest: UpdateUserParams
 messages:
   - User
-  - CreateUserRequest
-  - UpdateUserRequest
 ```
 
-2. Define your protobuf message:
+### 2. Define your protobuf message
 
 ```protobuf
 syntax = "proto3";
@@ -95,14 +118,13 @@ package user;
 option go_package = "your-project/gen;gen";
 
 message User {
-  int32 id = 1;
+  string id = 1;
   string name = 2;
   string email = 3;
-  optional int32 age = 4;
 }
 ```
 
-3. Run protoc with the plugin:
+### 3. Run protoc
 
 ```bash
 protoc \
@@ -111,15 +133,13 @@ protoc \
   --go-grpc_out=. \
   --go_opt=paths=source_relative \
   --go-grpc_opt=paths=source_relative \
-  --plugin=protoc-gen-mapper=../../protoc-gen-go-mapper.exe \
+  --plugin=protoc-gen-mapper=protoc-gen-go-mapper \
   --mapper_out=. \
   --mapper_opt=paths=source_relative,mapper_config=internal/proto/mapper.yaml \
-  internal/proto/item_category.proto
+  internal/proto/user.proto
 ```
 
-**Note:** The `--plugin` flag specifies the path to the protoc-gen-go-mapper binary. On Windows, use `.exe` extension. Adjust the relative path based on your project structure.
-
-4. Use the generated functions:
+### 4. Use the generated functions
 
 ```go
 // Convert DB model to protobuf
@@ -128,6 +148,8 @@ protoUser := ToProtoUser(dbUser)
 // Convert protobuf to DB model
 dbUser := ToDBUser(protoUser)
 ```
+
+## Usage
 
 ### Advanced Configuration
 
@@ -224,19 +246,19 @@ field_handlers:
 
 | Option | Type | Required | Description |
 |--------|------|----------|-------------|
-| `version` | string | Yes | Config version (must be "v1") |
-| `database` | string | Yes | Database type: `sqlc`, `pgx`, or `database_sql` |
-| `db_package` | string | Yes | Go package path for database models |
-| `package.proto` | string | Yes | Go package for generated protobuf code |
-| `package.db` | string | Yes | Go package for database models |
-| `type_mappings` | object | No | Custom type mappings between proto messages and DB models |
-| `response_type_mappings` | object | No | Mappings for response messages to SQLC Row types |
-| `type_aliases` | object | No | Reusable type conversion definitions |
-| `type_conversions` | array | No | Custom type conversion rules (optional - generic converters used when omitted) |
-| `response_patterns` | object | No | Configuration for response helper generation |
-| `pointer_settings` | object | No | Pointer handling strategies |
-| `messages` | array | No | List of proto messages to generate mappers for |
-| `field_handlers` | array | No | Special field handling rules |
+| `version` | string | ✅ Yes | Config version (must be "v1") |
+| `database` | string | ✅ Yes | Database type: `sqlc`, `pgx`, or `database_sql` |
+| `db_package` | string | ✅ Yes | Go package path for database models |
+| `package.proto` | string | ✅ Yes | Go package for generated protobuf code |
+| `package.db` | string | ✅ Yes | Go package for database models |
+| `type_mappings` | object | ❌ No | Custom type mappings between proto messages and DB models |
+| `response_type_mappings` | object | ❌ No | Mappings for response messages to SQLC Row types |
+| `type_aliases` | object | ❌ No | Reusable type conversion definitions |
+| `type_conversions` | array | ❌ No | Custom type conversion rules (optional - generic converters used when omitted) |
+| `response_patterns` | object | ❌ No | Configuration for response helper generation |
+| `pointer_settings` | object | ❌ No | Pointer handling strategies |
+| `messages` | array | ❌ No | List of proto messages to generate mappers for |
+| `field_handlers` | array | ❌ No | Special field handling rules |
 
 #### Generic Converters (Zero-Config Mode)
 
