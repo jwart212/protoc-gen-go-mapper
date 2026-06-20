@@ -1,0 +1,25 @@
+stages:
+  - build
+  - test
+
+variables:
+  GO_VERSION: "1.24"
+
+build:
+  stage: build
+  image: golang:${GO_VERSION}
+  script:
+    - mkdir -p bin
+    - go build -o bin/protoc-gen-go-mapper ./cmd/protoc-gen-go-mapper
+  artifacts:
+    paths:
+      - bin/protoc-gen-go-mapper
+    expire_in: 1 hour
+
+test:
+  stage: test
+  image: golang:${GO_VERSION}
+  script:
+    - go test -v ./...
+  dependencies:
+    - build

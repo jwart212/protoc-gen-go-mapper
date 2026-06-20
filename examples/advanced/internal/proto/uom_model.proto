@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package pos.uom.v1;
+
+option go_package = "./internal/gen/uompb";
+
+import "google/protobuf/timestamp.proto";
+
+// UOM represents the Unit of Measure DB model
+message UOM {
+  string id = 1;
+  string tenant_id = 2;
+  string code = 3;
+  string name = 4;
+  string symbol = 5;
+  optional string description = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+  optional google.protobuf.Timestamp deleted_at = 9;
+  optional string deleted_by = 10;
+}

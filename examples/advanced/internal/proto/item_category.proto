@@ -1,0 +1,165 @@
+syntax = "proto3";
+
+package pos.item_categories.v1;
+
+option go_package = "./internal/gen/item_categoriespb";
+
+import "google/protobuf/timestamp.proto";
+
+service ItemCategoryService {
+
+  rpc Create(CreateItemCategoryRequest)
+      returns (ItemCategoryResponse);
+
+  rpc Update(UpdateItemCategoryRequest)
+      returns (ItemCategoryResponse);
+
+  rpc Delete(DeleteItemCategoryRequest)
+      returns (ItemCategoryResponse);
+
+  rpc Restore(RestoreItemCategoryRequest)
+      returns (ItemCategoryResponse);
+
+  rpc Get(GetItemCategoryRequest)
+      returns (ItemCategoryResponse);
+
+  rpc List(ListItemCategoryRequest)
+      returns (ListItemCategoryResponse);
+
+  rpc Tree(ListItemCategoryTreeRequest)
+      returns (ListItemCategoryTreeResponse);
+}
+
+message ItemCategory {
+
+  string id = 1;
+
+  string tenant_id = 2;
+
+  optional string parent_id = 3;
+
+  string code = 4;
+
+  string name = 5;
+
+  optional string description = 6;
+
+  google.protobuf.Timestamp created_at = 7;
+
+  google.protobuf.Timestamp updated_at = 8;
+
+  optional google.protobuf.Timestamp deleted_at = 9;
+
+  optional string deleted_by = 10;
+}
+
+message CreateItemCategoryRequest {
+
+  string tenant_id = 1;
+
+  optional string parent_id = 2;
+
+  string code = 3;
+
+  string name = 4;
+
+  optional string description = 5;
+}
+
+message UpdateItemCategoryRequest {
+
+  string id = 1;
+
+  optional string tenant_id = 2;
+
+  optional string parent_id = 3;
+
+  optional string code = 4;
+
+  optional string name = 5;
+
+  optional string description = 6;
+}
+
+message DeleteItemCategoryRequest {
+
+  string id = 1;
+
+  string deleted_by = 2;
+}
+
+message RestoreItemCategoryRequest {
+
+  string id = 1;
+}
+
+message GetItemCategoryRequest {
+
+  string id = 1;
+}
+
+message ListItemCategoryRequest {
+
+  string tenant_id = 1;
+
+  int32 page = 2;
+
+  int32 limit = 3;
+
+  optional string search = 4;
+
+  optional string parent_id = 5;
+
+  bool include_deleted = 6;
+}
+
+message ItemCategoryResponse {
+
+  ItemCategory data = 1;
+}
+
+message ListItemCategoryResponse {
+
+  repeated ItemCategory data = 1;
+
+  int64 total = 2;
+
+  int32 page = 3;
+
+  int32 limit = 4;
+}
+
+message ListItemCategoryTreeRequest {
+
+  string tenant_id = 1;
+}
+
+message CategoryTreeNode {
+
+  string id = 1;
+
+  string tenant_id = 2;
+
+  optional string parent_id = 3;
+
+  string code = 4;
+
+  string name = 5;
+
+  optional string description = 6;
+
+  int32 level = 7;
+
+  repeated string path = 8;
+
+  repeated CategoryTreeNode children = 9;
+
+  google.protobuf.Timestamp created_at = 10;
+
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+message ListItemCategoryTreeResponse {
+
+  repeated CategoryTreeNode data = 1;
+}

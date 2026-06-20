@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package testdata;
+
+option go_package = "gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/testdata/gen";
+
+message Simple {
+  int32 id = 1;
+  string name = 2;
+}

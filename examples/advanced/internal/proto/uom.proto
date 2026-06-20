@@ -1,0 +1,179 @@
+syntax = "proto3";
+
+package pos.uom.v1;
+
+option go_package = "./internal/gen/uompb";
+
+import "google/protobuf/timestamp.proto";
+
+service UOMService {
+
+  rpc Create(CreateUOMRequest)
+      returns (UOMResponse);
+
+  rpc Update(UpdateUOMRequest)
+      returns (UOMResponse);
+
+  rpc Delete(DeleteUOMRequest)
+      returns (UOMResponse);
+
+  rpc Restore(RestoreUOMRequest)
+      returns (UOMResponse);
+
+  rpc Get(GetUOMRequest)
+      returns (UOMResponse);
+
+  rpc List(ListUOMRequest)
+      returns (ListUOMResponse);
+
+  rpc Exists(ExistsUOMRequest)
+      returns (ExistsUOMResponse);
+
+  rpc BatchDelete(BatchDeleteUOMRequest)
+      returns (BatchDeleteUOMResponse);
+
+  rpc BatchRestore(BatchRestoreUOMRequest)
+      returns (BatchRestoreUOMResponse);
+}
+
+
+message ExistsUOMRequest {
+
+  oneof lookup {
+
+    string id = 1;
+
+    string code = 2;
+
+    string symbol = 3;
+  }
+}
+
+message ExistsUOMResponse {
+
+  bool exists = 1;
+
+  optional UOM data = 2;
+}
+
+message BatchDeleteUOMRequest {
+
+  repeated string ids = 1;
+}
+
+message BatchDeleteResult {
+
+  string id = 1;
+
+  bool success = 2;
+
+  optional string error = 3;
+}
+
+message BatchDeleteUOMResponse {
+
+  repeated BatchDeleteResult results = 1;
+
+  int32 success_count = 2;
+
+  int32 failed_count = 3;
+}
+
+message BatchRestoreUOMRequest {
+
+  repeated string ids = 1;
+}
+
+message UOM {
+
+  string id = 1;
+
+  string code = 2;
+
+  string name = 3;
+
+  string symbol = 4;
+
+  optional string description = 5;
+
+  google.protobuf.Timestamp created_at = 6;
+
+  google.protobuf.Timestamp updated_at = 7;
+
+  optional google.protobuf.Timestamp deleted_at = 8;
+}
+
+message CreateUOMRequest {
+
+  string code = 1;
+
+  string name = 2;
+
+  string symbol = 3;
+
+  optional string description = 4;
+}
+
+message UpdateUOMRequest {
+
+  string id = 1;
+
+  optional string code = 2;
+
+  optional string name = 3;
+
+  optional string symbol = 4;
+
+  optional string description = 5;
+}
+
+message DeleteUOMRequest {
+
+  string id = 1;
+}
+
+message RestoreUOMRequest {
+
+  string id = 1;
+}
+
+message GetUOMRequest {
+
+  string id = 1;
+}
+
+message ListUOMRequest {
+
+  int32 page = 1;
+
+  int32 limit = 2;
+
+  optional string search = 3;
+
+  bool include_deleted = 4;
+}
+
+message UOMResponse {
+
+  UOM data = 1;
+}
+
+message ListUOMResponse {
+
+  repeated UOM data = 1;
+
+  int64 total = 2;
+
+  int32 page = 3;
+
+  int32 limit = 4;
+}
+
+message BatchRestoreUOMResponse {
+
+  repeated BatchDeleteResult results = 1;
+
+  int32 success_count = 2;
+
+  int32 failed_count = 3;
+}

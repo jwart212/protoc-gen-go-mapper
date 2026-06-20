@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package pos.health.v1;
+
+option go_package = "./internal/gen/healthpb";
+
+service Health {
+  rpc Check(HealthCheckRequest)
+      returns (HealthCheckResponse);
+
+  rpc Watch(HealthCheckRequest)
+      returns (stream HealthCheckResponse);
+}
+
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  ServingStatus status = 1;
+}
+
+enum ServingStatus {
+  UNKNOWN = 0;
+  SERVING = 1;
+  NOT_SERVING = 2;
+  SERVICE_UNKNOWN = 3;
+}

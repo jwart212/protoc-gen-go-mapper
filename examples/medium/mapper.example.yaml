@@ -1,0 +1,5 @@
+version: v1
+database: sqlc
+package:
+  proto: gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/medium/gen
+  db: gitlab.com/iktdev-boilerplate/go/protoc-gen-go-mapper/examples/medium/db
