@@ -36,6 +36,3 @@ dist/
 mapper.yaml
 
 default
-
-# Examples folder
-examples/advanced/

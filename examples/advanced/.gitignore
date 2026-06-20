@@ -1,0 +1,31 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+protoc-gen-go-mapper
+
+# Environment variables
+.env
+.env.example
+.env.local
+.env.*.local
+
+# Go build artifacts
+bin/
+dist/
+*.test
+*.out
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+.env
