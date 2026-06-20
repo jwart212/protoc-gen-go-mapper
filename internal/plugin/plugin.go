@@ -8,6 +8,7 @@ import (
 	"github.com/jwart212/protoc-gen-go-mapper/internal/config"
 	"github.com/jwart212/protoc-gen-go-mapper/internal/generator"
 	"github.com/jwart212/protoc-gen-go-mapper/internal/graph"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/handler"
 	"github.com/jwart212/protoc-gen-go-mapper/internal/parser/proto"
 	"github.com/jwart212/protoc-gen-go-mapper/internal/registry"
 	"github.com/jwart212/protoc-gen-go-mapper/internal/resolver"
@@ -17,11 +18,13 @@ import (
 
 // Plugin orchestrates the complete mapping generation pipeline.
 type Plugin struct {
-	cfg       *config.Config
-	parser    *proto.Parser
-	registry  *registry.Registry
-	generator *generator.Generator
-	resolver  *resolver.Resolver
+	cfg            *config.Config
+	parser         *proto.Parser
+	registry       *registry.Registry
+	generator      *generator.Generator
+	resolver       *resolver.Resolver
+	handlerReg     *handler.HandlerRegistry
+	typeHandlerReg *handler.HandlerRegistry
 }
 
 // New creates a new Plugin instance.
@@ -36,6 +39,29 @@ func New(cfg *config.Config) *Plugin {
 
 	// Register all converters
 	p.registerConverters()
+
+	// Load field handlers from configuration
+	if len(cfg.FieldHandlers) > 0 {
+		handlerReg, err := handler.LoadHandlers(cfg.FieldHandlers)
+		if err != nil {
+			// Log error but don't fail - we'll use default behavior
+			fmt.Printf("Warning: failed to load field handlers: %v\n", err)
+		} else {
+			p.handlerReg = handlerReg
+			p.generator.SetHandlerRegistry(handlerReg)
+		}
+	}
+
+	// Load type conversion handlers from configuration
+	if len(cfg.TypeConversions) > 0 {
+		typeHandlerReg, err := handler.LoadTypeConversions(cfg.TypeConversions, cfg.TypeAliases)
+		if err != nil {
+			// Log error but don't fail - we'll use default behavior
+			fmt.Printf("Warning: failed to load type conversion handlers: %v\n", err)
+		} else {
+			p.typeHandlerReg = typeHandlerReg
+		}
+	}
 
 	return p
 }
@@ -112,9 +138,16 @@ func (p *Plugin) Generate(req *GenerateRequest, w io.Writer) error {
 	} else {
 		allCode += "\t\"db\"\n"
 	}
-	allCode += "\t\"time\"\n"
+
+	// Add time import only if using old-style helpers (non-generic mode)
+	if len(p.cfg.TypeConversions) > 0 {
+		allCode += "\t\"time\"\n"
+	}
+
+	// Add uuid and pgtype imports (needed for both modes)
 	allCode += "\t\"github.com/google/uuid\"\n"
 	allCode += "\t\"github.com/jackc/pgx/v5/pgtype\"\n"
+
 	// Alias timestamppb import if it conflicts with the local package name
 	if packageName == "timestamppb" {
 		allCode += "\ttimestamppb \"google.golang.org/protobuf/types/known/timestamppb\"\n"
@@ -123,46 +156,160 @@ func (p *Plugin) Generate(req *GenerateRequest, w io.Writer) error {
 	}
 	allCode += ")\n\n"
 
-	// Add helper functions
-	allCode += "// Helper functions for nullable conversions\n"
-	allCode += "func newInt32(v int32, valid bool) *int32 { if valid { return &v }; return nil }\n"
-	allCode += "func newInt64(v int64, valid bool) *int64 { if valid { return &v }; return nil }\n"
-	allCode += "func newBool(v bool, valid bool) *bool { if valid { return &v }; return nil }\n"
-	allCode += "func newString(v string, valid bool) *string { if valid { return &v }; return nil }\n"
-	allCode += "func newFloat64(v float64, valid bool) *float64 { if valid { return &v }; return nil }\n"
-	allCode += "func newTimeString(v time.Time, valid bool) *string { if valid { s := v.Format(\"2006-01-02\"); return &s }; return nil }\n"
-	allCode += "func newText(v *string) pgtype.Text { if v != nil { return pgtype.Text{String: *v, Valid: true} }; return pgtype.Text{} }\n"
-	allCode += "func newInt8(v *int64) pgtype.Int8 { if v != nil { return pgtype.Int8{Int64: *v, Valid: true} }; return pgtype.Int8{} }\n"
-	allCode += "func newBoolPg(v *bool) pgtype.Bool { if v != nil { return pgtype.Bool{Bool: *v, Valid: true} }; return pgtype.Bool{} }\n"
-	allCode += "func newUUID(v *string) pgtype.UUID { if v != nil { if u, err := uuid.Parse(*v); err == nil { return pgtype.UUID{Bytes: u, Valid: true} } }; return pgtype.UUID{} }\n"
-	allCode += "func newStringFromUUID(v pgtype.UUID) *string { if v.Valid { s := uuid.UUID(v.Bytes).String(); return &s }; return nil }\n"
-	allCode += "func newUUIDFromString(v string) pgtype.UUID { if u, err := uuid.Parse(v); err == nil { return pgtype.UUID{Bytes: u, Valid: true} }; return pgtype.UUID{} }\n"
-	allCode += "func newStringFromUUIDNonPtr(v pgtype.UUID) string { if v.Valid { return uuid.UUID(v.Bytes).String() }; return \"\" }\n"
-	allCode += "func newStringFromText(v pgtype.Text) *string { if v.Valid { return &v.String }; return nil }\n"
-	allCode += "func newTimestamptz(v time.Time) pgtype.Timestamptz { return pgtype.Timestamptz{Time: v, Valid: true} }\n"
-	allCode += "func newTimestamptzFromTimestamp(v *timestamppb.Timestamp) pgtype.Timestamptz { if v != nil { return pgtype.Timestamptz{Time: v.AsTime(), Valid: true} }; return pgtype.Timestamptz{} }\n"
-	allCode += "func newTimestampFromTimestamptz(v pgtype.Timestamptz) *timestamppb.Timestamp { if v.Valid { return timestamppb.New(v.Time) }; return nil }\n"
-	allCode += "func newNullString(v *string) pgtype.Text { if v != nil { return pgtype.Text{String: *v, Valid: true} }; return pgtype.Text{} }\n\n"
+	// Add helper functions for nullable conversions
+	// Inline generic converters when using generic mode
+	if len(p.cfg.TypeConversions) == 0 {
+		// Add inline generic converter functions
+		allCode += "// Generic converter functions\n"
+		allCode += "func ConvertUUID[T string | *string](v pgtype.UUID) T {\n"
+		allCode += "\tif v.Valid {\n"
+		allCode += "\t\ts := uuid.UUID(v.Bytes).String()\n"
+		allCode += "\t\tvar t T\n"
+		allCode += "\t\tswitch any(t).(type) {\n"
+		allCode += "\t\tcase string:\n"
+		allCode += "\t\t\treturn any(s).(T)\n"
+		allCode += "\t\tcase *string:\n"
+		allCode += "\t\t\treturn any(&s).(T)\n"
+		allCode += "\t\t}\n"
+		allCode += "\t}\n"
+		allCode += "\tvar zero T\n"
+		allCode += "\treturn zero\n"
+		allCode += "}\n\n"
 
-	// Generate response type helpers for messages ending with "Response"
+		allCode += "func ConvertTimestamp[T *timestamppb.Timestamp](v pgtype.Timestamptz) T {\n"
+		allCode += "\tif v.Valid {\n"
+		allCode += "\t\treturn timestamppb.New(v.Time)\n"
+		allCode += "\t}\n"
+		allCode += "\tvar zero T\n"
+		allCode += "\treturn zero\n"
+		allCode += "}\n\n"
+
+		allCode += "func ConvertText[T string | *string](v pgtype.Text) T {\n"
+		allCode += "\tif v.Valid {\n"
+		allCode += "\t\tvar t T\n"
+		allCode += "\t\tswitch any(t).(type) {\n"
+		allCode += "\t\tcase string:\n"
+		allCode += "\t\t\treturn any(v.String).(T)\n"
+		allCode += "\t\tcase *string:\n"
+		allCode += "\t\t\treturn any(&v.String).(T)\n"
+		allCode += "\t\t}\n"
+		allCode += "\t}\n"
+		allCode += "\tvar zero T\n"
+		allCode += "\treturn zero\n"
+		allCode += "}\n\n"
+
+		// Reverse converters for ToDB functions
+		allCode += "func ConvertUUIDToDB(v string) pgtype.UUID {\n"
+		allCode += "\tif u, err := uuid.Parse(v); err == nil {\n"
+		allCode += "\t\treturn pgtype.UUID{Bytes: u, Valid: true}\n"
+		allCode += "\t}\n"
+		allCode += "\treturn pgtype.UUID{}\n"
+		allCode += "}\n\n"
+
+		allCode += "func ConvertUUIDPtrToDB(v *string) pgtype.UUID {\n"
+		allCode += "\tif v != nil {\n"
+		allCode += "\t\tif u, err := uuid.Parse(*v); err == nil {\n"
+		allCode += "\t\t\treturn pgtype.UUID{Bytes: u, Valid: true}\n"
+		allCode += "\t\t}\n"
+		allCode += "\t}\n"
+		allCode += "\treturn pgtype.UUID{}\n"
+		allCode += "}\n\n"
+
+		allCode += "func ConvertTextToDB(v *string) pgtype.Text {\n"
+		allCode += "\tif v != nil {\n"
+		allCode += "\t\treturn pgtype.Text{String: *v, Valid: true}\n"
+		allCode += "\t}\n"
+		allCode += "\treturn pgtype.Text{}\n"
+		allCode += "}\n\n"
+
+		allCode += "func ConvertTimestampToDB(v *timestamppb.Timestamp) pgtype.Timestamptz {\n"
+		allCode += "\tif v != nil {\n"
+		allCode += "\t\treturn pgtype.Timestamptz{Time: v.AsTime(), Valid: true}\n"
+		allCode += "\t}\n"
+		allCode += "\treturn pgtype.Timestamptz{}\n"
+		allCode += "}\n\n"
+	} else {
+		// Add custom helper functions from configuration
+		if len(p.cfg.HelperFunctions) > 0 {
+			for _, helper := range p.cfg.HelperFunctions {
+				if helper.Body != "" {
+					allCode += "func " + helper.Name + " " + helper.Body + "\n"
+				} else if helper.Signature != "" {
+					allCode += "func " + helper.Name + " " + helper.Signature + " { /* TODO: implement */ }\n"
+				}
+			}
+			allCode += "\n"
+		}
+
+		// Only add default helpers if type_conversions are configured (backward compatibility)
+		if len(p.cfg.TypeConversions) > 0 {
+			// Add default helper functions (if not overridden by config)
+			defaultHelpers := map[string]string{
+				"newInt32":                    "func newInt32(v int32, valid bool) *int32 { if valid { return &v }; return nil }",
+				"newInt64":                    "func newInt64(v int64, valid bool) *int64 { if valid { return &v }; return nil }",
+				"newBool":                     "func newBool(v bool, valid bool) *bool { if valid { return &v }; return nil }",
+				"newString":                   "func newString(v string, valid bool) *string { if valid { return &v }; return nil }",
+				"newFloat64":                  "func newFloat64(v float64, valid bool) *float64 { if valid { return &v }; return nil }",
+				"newTimeString":               "func newTimeString(v time.Time, valid bool) *string { if valid { s := v.Format(\"2006-01-02\"); return &s }; return nil }",
+				"newText":                     "func newText(v *string) pgtype.Text { if v != nil { return pgtype.Text{String: *v, Valid: true} }; return pgtype.Text{} }",
+				"newInt8":                     "func newInt8(v *int64) pgtype.Int8 { if v != nil { return pgtype.Int8{Int64: *v, Valid: true} }; return pgtype.Int8{} }",
+				"newBoolPg":                   "func newBoolPg(v *bool) pgtype.Bool { if v != nil { return pgtype.Bool{Bool: *v, Valid: true} }; return pgtype.Bool{} }",
+				"newUUID":                     "func newUUID(v *string) pgtype.UUID { if v != nil { if u, err := uuid.Parse(*v); err == nil { return pgtype.UUID{Bytes: u, Valid: true} } }; return pgtype.UUID{} }",
+				"newStringFromUUID":           "func newStringFromUUID(v pgtype.UUID) *string { if v.Valid { s := uuid.UUID(v.Bytes).String(); return &s }; return nil }",
+				"newUUIDFromString":           "func newUUIDFromString(v string) pgtype.UUID { if u, err := uuid.Parse(v); err == nil { return pgtype.UUID{Bytes: u, Valid: true} }; return pgtype.UUID{} }",
+				"newStringFromUUIDNonPtr":     "func newStringFromUUIDNonPtr(v pgtype.UUID) string { if v.Valid { return uuid.UUID(v.Bytes).String() }; return \"\" }",
+				"newStringFromText":           "func newStringFromText(v pgtype.Text) *string { if v.Valid { return &v.String }; return nil }",
+				"newTimestamptz":              "func newTimestamptz(v time.Time) pgtype.Timestamptz { return pgtype.Timestamptz{Time: v, Valid: true} }",
+				"newTimestamptzFromTimestamp": "func newTimestamptzFromTimestamp(v *timestamppb.Timestamp) pgtype.Timestamptz { if v != nil { return pgtype.Timestamptz{Time: v.AsTime(), Valid: true} }; return pgtype.Timestamptz{} }",
+				"newTimestampFromTimestamptz": "func newTimestampFromTimestamptz(v pgtype.Timestamptz) *timestamppb.Timestamp { if v.Valid { return timestamppb.New(v.Time) }; return nil }",
+				"newNullString":               "func newNullString(v *string) pgtype.Text { if v != nil { return pgtype.Text{String: *v, Valid: true} }; return pgtype.Text{} }",
+			}
+
+			// Track which helpers were provided by config
+			configHelpers := make(map[string]bool)
+			for _, helper := range p.cfg.HelperFunctions {
+				configHelpers[helper.Name] = true
+			}
+
+			// Add default helpers that weren't overridden
+			for name, body := range defaultHelpers {
+				if !configHelpers[name] {
+					allCode += body + "\n"
+				}
+			}
+			allCode += "\n"
+		}
+	}
+
+	// Generate response type helpers for messages ending with configured suffix
 	// These handle array data + metadata conversion
 	// Do this before the message loop so it processes all messages regardless of the messages filter
 	for _, msg := range model.Messages {
-		if strings.HasSuffix(msg.Name, "Response") {
-			// Find the "data" field (convention for list responses)
+		responseSuffix := p.cfg.ResponsePatterns.ResponseSuffix
+		if responseSuffix == "" {
+			responseSuffix = "Response"
+		}
+
+		if strings.HasSuffix(msg.Name, responseSuffix) {
+			// Find the data field using configured pattern
+			dataFieldName := p.cfg.ResponsePatterns.DataField
+			if dataFieldName == "" {
+				dataFieldName = "data"
+			}
+
 			var dataField *schema.Field
 			var hasTotal, hasPage, hasLimit bool
 			for _, field := range msg.Fields {
-				if strings.ToLower(field.Name) == "data" {
+				if strings.ToLower(field.Name) == dataFieldName {
 					dataField = field
 				}
-				if strings.ToLower(field.Name) == "total" {
+				if strings.ToLower(field.Name) == p.cfg.ResponsePatterns.TotalField {
 					hasTotal = true
 				}
-				if strings.ToLower(field.Name) == "page" {
+				if strings.ToLower(field.Name) == p.cfg.ResponsePatterns.PageField {
 					hasPage = true
 				}
-				if strings.ToLower(field.Name) == "limit" {
+				if strings.ToLower(field.Name) == p.cfg.ResponsePatterns.LimitField {
 					hasLimit = true
 				}
 			}
@@ -171,26 +318,39 @@ func (p *Plugin) Generate(req *GenerateRequest, w io.Writer) error {
 				elementType := dataField.ProtoType.Name
 
 				// Get the SQLC type name for the element type
-				// Look up in type_mappings to find the corresponding SQLC type
-				sqlcType := elementType
+				// First check response_type_mappings for response messages
+				dbTypeName := ""
 				hasMapping := false
-				for srcType, dstType := range p.cfg.TypeMappings {
-					if dstType == elementType {
-						sqlcType = srcType
+
+				// Check response_type_mappings first (for response messages)
+				if p.cfg.ResponseTypeMappings != nil {
+					if sqlcType, ok := p.cfg.ResponseTypeMappings[msg.Name]; ok {
+						dbTypeName = sqlcType
 						hasMapping = true
-						break
 					}
 				}
 
-				// Skip if no mapping found (e.g., CategoryTreeNode which requires custom logic)
+				// If not found in response_type_mappings, check type_mappings
 				if !hasMapping {
-					continue
+					for srcType, dstType := range p.cfg.TypeMappings {
+						if srcType == elementType {
+							// proto type is the key, SQLC type is the value
+							dbTypeName = dstType
+							hasMapping = true
+							break
+						}
+						if dstType == elementType {
+							// proto type is the value (reverse mapping), SQLC type is the key
+							dbTypeName = srcType
+							hasMapping = true
+							break
+						}
+					}
 				}
 
-				// Get the DB type name for the element type
-				dbTypeName := elementType
-				if mappedName, ok := p.cfg.TypeMappings[elementType]; ok {
-					dbTypeName = mappedName
+				// Skip if no mapping found
+				if !hasMapping {
+					continue
 				}
 
 				// Find the target message for field mapping
@@ -207,28 +367,161 @@ func (p *Plugin) Generate(req *GenerateRequest, w io.Writer) error {
 					// Generate response helper function with inline array conversion
 					allCode += fmt.Sprintf("// ToProto%sFromRows converts SQLC rows to %s response\n", msg.Name, msg.Name)
 					allCode += fmt.Sprintf("func ToProto%sFromRows(rows []sqlc.%s, total int64, page, limit int32) *%s {\n",
-						msg.Name, sqlcType, msg.Name)
+						msg.Name, dbTypeName, msg.Name)
 					allCode += "\tif rows == nil {\n"
 					allCode += "\t\treturn nil\n"
 					allCode += "\t}\n"
 					allCode += "\titems := make([]*" + elementType + ", len(rows))\n"
 					allCode += "\tfor i, item := range rows {\n"
-					allCode += "\t\titems[i] = ToProto" + elementType + "(sqlc." + dbTypeName + "{\n"
+					allCode += "\t\titems[i] = &" + elementType + "{\n"
 
-					// Map fields from source row to target message
-					// Only map fields that exist in the source type (exclude fields like DeletedAt/DeletedBy for Row types)
+					// Map fields from source row to target message using handler system
 					if targetMsg != nil {
 						for _, field := range targetMsg.Fields {
 							dbFieldName := toPascalCase(field.Name)
-							// Skip fields that are likely not in Row types (soft delete fields)
-							if dbFieldName == "DeletedAt" || dbFieldName == "DeletedBy" {
+							protoFieldName := toProtoPascalCase(field.Name)
+
+							// Skip fields configured in response_patterns.skip_fields
+							shouldSkip := false
+							if len(p.cfg.ResponsePatterns.SkipFields) > 0 {
+								for _, skipField := range p.cfg.ResponsePatterns.SkipFields {
+									if dbFieldName == skipField {
+										shouldSkip = true
+										break
+									}
+								}
+							}
+							if shouldSkip {
 								continue
 							}
-							allCode += fmt.Sprintf("\t\t\t%s: item.%s,\n", dbFieldName, dbFieldName)
+
+							// Use generic converters if no type_conversions configured
+							if len(p.cfg.TypeConversions) == 0 {
+								// Auto-detect and use generic converters for common types
+								protoFieldType := field.ProtoType.Name
+								dbFieldType := field.DBType.Name
+
+								// UUID fields (string <-> pgtype.UUID)
+								if protoFieldType == "string" && dbFieldType == "pgtype.UUID" {
+									if field.Optional {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertUUID[*string](item.%s),\n", protoFieldName, dbFieldName)
+									} else {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertUUID[string](item.%s),\n", protoFieldName, dbFieldName)
+									}
+									continue
+								}
+
+								// Timestamp fields (google.protobuf.Timestamp <-> pgtype.Timestamptz)
+								if protoFieldType == "Timestamp" || protoFieldType == "google.protobuf.Timestamp" {
+									if dbFieldType == "pgtype.Timestamptz" {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertTimestamp[*timestamppb.Timestamp](item.%s),\n", protoFieldName, dbFieldName)
+										continue
+									}
+								}
+
+								// Text fields (string <-> pgtype.Text)
+								if protoFieldType == "string" && dbFieldType == "pgtype.Text" {
+									if field.Optional {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertText[*string](item.%s),\n", protoFieldName, dbFieldName)
+									} else {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertText[string](item.%s),\n", protoFieldName, dbFieldName)
+									}
+									continue
+								}
+
+								// Numeric fields (int32, int64, float64, bool)
+								if protoFieldType == "int32" && dbFieldType == "int32" {
+									if field.Optional {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertInt32[*int32](item.%s, true),\n", protoFieldName, dbFieldName)
+									} else {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertInt32[int32](item.%s, true),\n", protoFieldName, dbFieldName)
+									}
+									continue
+								}
+
+								if protoFieldType == "int64" && dbFieldType == "int64" {
+									if field.Optional {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertInt64[*int64](item.%s, true),\n", protoFieldName, dbFieldName)
+									} else {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertInt64[int64](item.%s, true),\n", protoFieldName, dbFieldName)
+									}
+									continue
+								}
+
+								if protoFieldType == "float64" && dbFieldType == "float64" {
+									if field.Optional {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertFloat64[*float64](item.%s, true),\n", protoFieldName, dbFieldName)
+									} else {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertFloat64[float64](item.%s, true),\n", protoFieldName, dbFieldName)
+									}
+									continue
+								}
+
+								if protoFieldType == "bool" && dbFieldType == "bool" {
+									if field.Optional {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertBool[*bool](item.%s, true),\n", protoFieldName, dbFieldName)
+									} else {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertBool[bool](item.%s, true),\n", protoFieldName, dbFieldName)
+									}
+									continue
+								}
+							}
+
+							// Check type-based handlers first
+							if p.typeHandlerReg != nil {
+								if h := p.typeHandlerReg.Find(field, dbTypeName); h != nil {
+									expr, err := h.GenerateToProto(field, dbFieldName, protoFieldName, dbTypeName)
+									if err != nil {
+										fmt.Printf("Warning: type handler error for field %s: %v\n", field.Name, err)
+									} else if expr != "" {
+										// Replace {variable} placeholder with item
+										expr = strings.Replace(expr, "{variable}", "item", -1)
+
+										// Apply pointer strategy if configured
+										if typeConvHandler, ok := h.(*handler.TypeConversionHandler); ok {
+											strategy := typeConvHandler.PointerStrategy()
+											if strategy == "" && p.cfg.PointerSettings.DefaultStrategy != "" {
+												strategy = p.cfg.PointerSettings.DefaultStrategy
+											}
+											if fieldStrategy, ok := p.cfg.PointerSettings.FieldStrategies[protoFieldName]; ok {
+												strategy = fieldStrategy
+											}
+
+											// Apply pointer strategy
+											if strategy == "omit" && field.Optional {
+												// Skip field if strategy is omit and field is optional
+												continue
+											}
+										}
+
+										allCode += "\t\t\t" + expr + ",\n"
+										continue
+									}
+								}
+							}
+
+							// Check field name handlers
+							if p.handlerReg != nil {
+								if h := p.handlerReg.Find(field, dbTypeName); h != nil {
+									// Use handler for conversion
+									expr, err := h.GenerateToProto(field, dbFieldName, protoFieldName, dbTypeName)
+									if err != nil {
+										// Log error but continue with default
+										fmt.Printf("Warning: handler error for field %s: %v\n", field.Name, err)
+									} else if expr != "" {
+										// Prepend item. prefix for response helpers
+										allCode += "\t\t\t" + strings.Replace(expr, ".", "item.", 1) + ",\n"
+										continue
+									}
+								}
+							}
+
+							// Direct assignment for other fields (fallback)
+							allCode += fmt.Sprintf("\t\t\t%s: item.%s,\n", protoFieldName, dbFieldName)
 						}
 					}
 
-					allCode += "\t\t})\n"
+					allCode += "\t\t}\n"
 					allCode += "\t}\n"
 					allCode += "\treturn &" + msg.Name + "{\n"
 					allCode += "\t\tData: items,\n"
@@ -245,7 +538,7 @@ func (p *Plugin) Generate(req *GenerateRequest, w io.Writer) error {
 					// Use the SQLC type directly for the conversion
 					allCode += fmt.Sprintf("// ToProto%sFromRows converts SQLC rows to %s response\n", msg.Name, msg.Name)
 					allCode += fmt.Sprintf("func ToProto%sFromRows(rows []sqlc.%s) *%s {\n",
-						msg.Name, sqlcType, msg.Name)
+						msg.Name, dbTypeName, msg.Name)
 					allCode += "\tif rows == nil {\n"
 					allCode += "\t\treturn nil\n"
 					allCode += "\t}\n"
@@ -253,41 +546,149 @@ func (p *Plugin) Generate(req *GenerateRequest, w io.Writer) error {
 					allCode += "\tfor i, item := range rows {\n"
 					allCode += "\t\titems[i] = &" + elementType + "{\n"
 
-					// Map fields from source row to target message with proper conversions
+					// Map fields from source row to target message using handler system
 					if targetMsg != nil {
 						for _, field := range targetMsg.Fields {
 							dbFieldName := toPascalCase(field.Name)
-							// Skip fields that are likely not in Row types
-							if dbFieldName == "DeletedAt" || dbFieldName == "DeletedBy" {
-								continue
+							protoFieldName := toProtoPascalCase(field.Name)
+
+							// Skip fields configured in response_patterns.skip_fields
+							shouldSkip := false
+							if len(p.cfg.ResponsePatterns.SkipFields) > 0 {
+								for _, skipField := range p.cfg.ResponsePatterns.SkipFields {
+									if dbFieldName == skipField {
+										shouldSkip = true
+										break
+									}
+								}
 							}
-							// For tree nodes, skip Children field as it's not in SQLC result
-							if dbFieldName == "Children" {
+							if shouldSkip {
 								continue
 							}
 
-							// Apply proper type conversions based on field type
-							protoFieldName := toProtoPascalCase(field.Name)
-							dbFieldName = toPascalCase(field.Name)
-							// Special case for CategoryTreeNode ParentId - use TenantID as source with pointer conversion
-							if protoFieldName == "ParentId" && elementType == "CategoryTreeNode" {
-								allCode += fmt.Sprintf("\t\t\t%s: newStringFromUUID(item.TenantID),\n", protoFieldName)
-							} else if protoFieldName == "Id" || protoFieldName == "TenantId" {
-								// UUID fields need conversion
-								allCode += fmt.Sprintf("\t\t\t%s: newStringFromUUIDNonPtr(item.%s),\n", protoFieldName, dbFieldName)
-							} else if protoFieldName == "Description" {
-								// Text fields need conversion
-								allCode += fmt.Sprintf("\t\t\t%s: newString(item.%s.String, item.%s.Valid),\n", protoFieldName, dbFieldName, dbFieldName)
-							} else if protoFieldName == "CreatedAt" || protoFieldName == "UpdatedAt" {
-								// Timestamp fields need conversion
-								allCode += fmt.Sprintf("\t\t\t%s: newTimestampFromTimestamptz(item.%s),\n", protoFieldName, dbFieldName)
-							} else if protoFieldName == "Path" {
-								// Path field needs type assertion from interface{} to []string
-								allCode += fmt.Sprintf("\t\t\t%s: item.%s.([]string),\n", protoFieldName, dbFieldName)
-							} else {
-								// Direct assignment for other fields
-								allCode += fmt.Sprintf("\t\t\t%s: item.%s,\n", protoFieldName, dbFieldName)
+							// Use generic converters if no type_conversions configured
+							if len(p.cfg.TypeConversions) == 0 {
+								// Auto-detect and use generic converters for common types
+								protoFieldType := field.ProtoType.Name
+								dbFieldType := field.DBType.Name
+
+								// UUID fields (string <-> pgtype.UUID)
+								if protoFieldType == "string" && dbFieldType == "pgtype.UUID" {
+									if field.Optional {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertUUID[*string](item.%s),\n", protoFieldName, dbFieldName)
+									} else {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertUUID[string](item.%s),\n", protoFieldName, dbFieldName)
+									}
+									continue
+								}
+
+								// Timestamp fields (google.protobuf.Timestamp <-> pgtype.Timestamptz)
+								if protoFieldType == "Timestamp" || protoFieldType == "google.protobuf.Timestamp" {
+									if dbFieldType == "pgtype.Timestamptz" {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertTimestamp[*timestamppb.Timestamp](item.%s),\n", protoFieldName, dbFieldName)
+										continue
+									}
+								}
+
+								// Text fields (string <-> pgtype.Text)
+								if protoFieldType == "string" && dbFieldType == "pgtype.Text" {
+									if field.Optional {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertText[*string](item.%s),\n", protoFieldName, dbFieldName)
+									} else {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertText[string](item.%s),\n", protoFieldName, dbFieldName)
+									}
+									continue
+								}
+
+								// Numeric fields (int32, int64, float64, bool)
+								if protoFieldType == "int32" && dbFieldType == "int32" {
+									if field.Optional {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertInt32[*int32](item.%s, true),\n", protoFieldName, dbFieldName)
+									} else {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertInt32[int32](item.%s, true),\n", protoFieldName, dbFieldName)
+									}
+									continue
+								}
+
+								if protoFieldType == "int64" && dbFieldType == "int64" {
+									if field.Optional {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertInt64[*int64](item.%s, true),\n", protoFieldName, dbFieldName)
+									} else {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertInt64[int64](item.%s, true),\n", protoFieldName, dbFieldName)
+									}
+									continue
+								}
+
+								if protoFieldType == "float64" && dbFieldType == "float64" {
+									if field.Optional {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertFloat64[*float64](item.%s, true),\n", protoFieldName, dbFieldName)
+									} else {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertFloat64[float64](item.%s, true),\n", protoFieldName, dbFieldName)
+									}
+									continue
+								}
+
+								if protoFieldType == "bool" && dbFieldType == "bool" {
+									if field.Optional {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertBool[*bool](item.%s, true),\n", protoFieldName, dbFieldName)
+									} else {
+										allCode += fmt.Sprintf("\t\t\t%s: ConvertBool[bool](item.%s, true),\n", protoFieldName, dbFieldName)
+									}
+									continue
+								}
 							}
+
+							// Check type-based handlers first
+							if p.typeHandlerReg != nil {
+								if h := p.typeHandlerReg.Find(field, dbTypeName); h != nil {
+									expr, err := h.GenerateToProto(field, dbFieldName, protoFieldName, dbTypeName)
+									if err != nil {
+										fmt.Printf("Warning: type handler error for field %s: %v\n", field.Name, err)
+									} else if expr != "" {
+										// Replace {variable} placeholder with item
+										expr = strings.Replace(expr, "{variable}", "item", -1)
+
+										// Apply pointer strategy if configured
+										if typeConvHandler, ok := h.(*handler.TypeConversionHandler); ok {
+											strategy := typeConvHandler.PointerStrategy()
+											if strategy == "" && p.cfg.PointerSettings.DefaultStrategy != "" {
+												strategy = p.cfg.PointerSettings.DefaultStrategy
+											}
+											if fieldStrategy, ok := p.cfg.PointerSettings.FieldStrategies[protoFieldName]; ok {
+												strategy = fieldStrategy
+											}
+
+											// Apply pointer strategy
+											if strategy == "omit" && field.Optional {
+												// Skip field if strategy is omit and field is optional
+												continue
+											}
+										}
+
+										allCode += "\t\t\t" + expr + ",\n"
+										continue
+									}
+								}
+							}
+
+							// Check field name handlers
+							if p.handlerReg != nil {
+								if h := p.handlerReg.Find(field, dbTypeName); h != nil {
+									// Use handler for conversion
+									expr, err := h.GenerateToProto(field, dbFieldName, protoFieldName, dbTypeName)
+									if err != nil {
+										// Log error but continue with default
+										fmt.Printf("Warning: handler error for field %s: %v\n", field.Name, err)
+									} else if expr != "" {
+										// Prepend item. prefix for response helpers
+										allCode += "\t\t\t" + strings.Replace(expr, ".", "item.", 1) + ",\n"
+										continue
+									}
+								}
+							}
+
+							// Direct assignment for other fields (fallback)
+							allCode += fmt.Sprintf("\t\t\t%s: item.%s,\n", protoFieldName, dbFieldName)
 						}
 					}
 
@@ -348,7 +749,8 @@ func (p *Plugin) Generate(req *GenerateRequest, w io.Writer) error {
 		}
 
 		// Generate code
-		code, err := p.generator.Generate(msg, protoToDB, dbToProto, p.cfg.TypeMappings)
+		useGenericConverters := len(p.cfg.TypeConversions) == 0
+		code, err := p.generator.Generate(msg, protoToDB, dbToProto, p.cfg.TypeMappings, useGenericConverters)
 		if err != nil {
 			return fmt.Errorf("generating code for %s: %w", msg.Name, err)
 		}

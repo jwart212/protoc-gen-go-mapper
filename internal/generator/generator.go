@@ -1,10 +1,12 @@
 package generator
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/jwart212/protoc-gen-go-mapper/internal/graph"
+	"github.com/jwart212/protoc-gen-go-mapper/internal/handler"
 	"github.com/jwart212/protoc-gen-go-mapper/internal/schema"
 	"github.com/jwart212/protoc-gen-go-mapper/internal/template"
 	"github.com/jwart212/protoc-gen-go-mapper/pkg/converter"
@@ -14,15 +16,22 @@ import (
 type Generator struct {
 	tmpl         *template.Template
 	generatedPkg string
+	handlerReg   *handler.HandlerRegistry
 }
 
 // New creates a new Generator instance with loaded templates.
 func New() *Generator {
 	g := &Generator{
-		tmpl: template.New(),
+		tmpl:       template.New(),
+		handlerReg: handler.NewHandlerRegistry(),
 	}
 	g.loadTemplates()
 	return g
+}
+
+// SetHandlerRegistry sets the handler registry for field handling.
+func (g *Generator) SetHandlerRegistry(reg *handler.HandlerRegistry) {
+	g.handlerReg = reg
 }
 
 // SetGeneratedPackage sets the package name for the generated file.
@@ -48,7 +57,7 @@ func (g *Generator) loadTemplates() {
 }
 
 // Generate produces mapping code for a single message.
-func (g *Generator) Generate(msg *schema.Message, protoToDB, dbToProto *graph.Mapper, typeMappings map[string]string) (string, error) {
+func (g *Generator) Generate(msg *schema.Message, protoToDB, dbToProto *graph.Mapper, typeMappings map[string]string, useGenericConverters bool) (string, error) {
 	var code string
 
 	// Get the DB type name from type mappings, or use the proto message name
@@ -78,6 +87,25 @@ func (g *Generator) Generate(msg *schema.Message, protoToDB, dbToProto *graph.Ma
 		// Use PascalCase for DB fields, protoCase for proto fields
 		dbFieldName := toPascalCase(field.Name)
 		protoFieldName := toProtoCase(field.Name)
+
+		// Check if a handler matches this field
+		if g.handlerReg != nil {
+			if h := g.handlerReg.Find(field, dbTypeName); h != nil {
+				// Use handler for ToProto conversion
+				expr, err := h.GenerateToProto(field, dbFieldName, protoFieldName, dbTypeName)
+				if err != nil {
+					return "", fmt.Errorf("handler error for field %s: %w", field.Name, err)
+				}
+				// If handler returns empty string, skip the field
+				if expr == "" {
+					continue
+				}
+				// Prepend src. prefix for ToProto conversions
+				code += "\t\t" + strings.Replace(expr, ".", "src.", 1) + ",\n"
+				continue
+			}
+		}
+
 		// Find the converter for this field
 		var conv converter.Converter
 		for _, mapping := range dbToProto.Fields {
@@ -86,7 +114,7 @@ func (g *Generator) Generate(msg *schema.Message, protoToDB, dbToProto *graph.Ma
 				break
 			}
 		}
-		if conv != nil {
+		if conv != nil && !useGenericConverters {
 			expr, err := conv.Generate(converter.MappingField{
 				SourceField: field.Name,
 				TargetField: field.Name,
@@ -99,6 +127,32 @@ func (g *Generator) Generate(msg *schema.Message, protoToDB, dbToProto *graph.Ma
 				return "", err
 			}
 			code += "\t\t" + protoFieldName + ": " + expr + ",\n"
+		} else if useGenericConverters {
+			// Use generic converters if no converter found and generic mode is enabled
+			protoFieldType := field.ProtoType.Name
+			dbFieldType := field.DBType.Name
+
+			// UUID fields (string <-> pgtype.UUID)
+			if protoFieldType == "string" && dbFieldType == "pgtype.UUID" {
+				if field.Optional {
+					code += fmt.Sprintf("\t\t%s: ConvertUUID[*string](src.%s),\n", protoFieldName, dbFieldName)
+				} else {
+					code += fmt.Sprintf("\t\t%s: ConvertUUID[string](src.%s),\n", protoFieldName, dbFieldName)
+				}
+				// Timestamp fields (google.protobuf.Timestamp <-> pgtype.Timestamptz)
+			} else if (protoFieldType == "Timestamp" || protoFieldType == "google.protobuf.Timestamp") && dbFieldType == "pgtype.Timestamptz" {
+				code += fmt.Sprintf("\t\t%s: ConvertTimestamp[*timestamppb.Timestamp](src.%s),\n", protoFieldName, dbFieldName)
+				// Text fields (string <-> pgtype.Text)
+			} else if protoFieldType == "string" && dbFieldType == "pgtype.Text" {
+				if field.Optional {
+					code += fmt.Sprintf("\t\t%s: ConvertText[*string](src.%s),\n", protoFieldName, dbFieldName)
+				} else {
+					code += fmt.Sprintf("\t\t%s: ConvertText[string](src.%s),\n", protoFieldName, dbFieldName)
+				}
+				// Direct assignment for other types
+			} else {
+				code += "\t\t" + protoFieldName + ": src." + dbFieldName + ",\n"
+			}
 		} else {
 			code += "\t\t" + protoFieldName + ": src." + dbFieldName + ",\n"
 		}
@@ -112,7 +166,49 @@ func (g *Generator) Generate(msg *schema.Message, protoToDB, dbToProto *graph.Ma
 		// Use protoCase for proto fields, PascalCase for DB fields
 		protoFieldName := toProtoCase(field.Name)
 		dbFieldName := toPascalCase(field.Name)
-		// Find the converter for this field
+
+		// Check if a handler matches this field
+		if g.handlerReg != nil {
+			if h := g.handlerReg.Find(field, dbTypeName); h != nil {
+				// Use handler for ToDB conversion
+				expr, err := h.GenerateToDB(field, dbFieldName, protoFieldName, dbTypeName)
+				if err != nil {
+					return "", fmt.Errorf("handler error for field %s: %w", field.Name, err)
+				}
+				// If handler returns empty string, skip the field
+				if expr == "" {
+					continue
+				}
+				code += "\t\t" + expr + ",\n"
+				continue
+			}
+		}
+
+		// Use generic converters if enabled (before registry lookup)
+		if useGenericConverters {
+			protoFieldType := field.ProtoType.Name
+			dbFieldType := field.DBType.Name
+
+			// UUID fields (string <-> pgtype.UUID)
+			if protoFieldType == "string" && dbFieldType == "pgtype.UUID" {
+				if field.Optional {
+					code += fmt.Sprintf("\t\t%s: ConvertUUIDPtrToDB(src.%s),\n", dbFieldName, protoFieldName)
+				} else {
+					code += fmt.Sprintf("\t\t%s: ConvertUUIDToDB(src.%s),\n", dbFieldName, protoFieldName)
+				}
+				continue
+				// Timestamp fields (google.protobuf.Timestamp <-> pgtype.Timestamptz)
+			} else if (protoFieldType == "Timestamp" || protoFieldType == "google.protobuf.Timestamp") && dbFieldType == "pgtype.Timestamptz" {
+				code += fmt.Sprintf("\t\t%s: ConvertTimestampToDB(src.%s),\n", dbFieldName, protoFieldName)
+				continue
+				// Text fields (string <-> pgtype.Text)
+			} else if protoFieldType == "string" && dbFieldType == "pgtype.Text" {
+				code += fmt.Sprintf("\t\t%s: ConvertTextToDB(src.%s),\n", dbFieldName, protoFieldName)
+				continue
+			}
+		}
+
+		// Find the converter for this field (fallback for non-generic mode or unhandled types)
 		var conv converter.Converter
 		for _, mapping := range protoToDB.Fields {
 			if mapping.SourceField == field.Name {
@@ -120,7 +216,7 @@ func (g *Generator) Generate(msg *schema.Message, protoToDB, dbToProto *graph.Ma
 				break
 			}
 		}
-		if conv != nil {
+		if conv != nil && !useGenericConverters {
 			expr, err := conv.Generate(converter.MappingField{
 				SourceField: field.Name,
 				TargetField: field.Name,

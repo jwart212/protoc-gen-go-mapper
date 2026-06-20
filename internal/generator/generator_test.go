@@ -34,7 +34,7 @@ func TestGenerate(t *testing.T) {
 	protoToDB := graph.NewMapper("User", "User")
 	dbToProto := graph.NewMapper("User", "User")
 
-	code, err := g.Generate(msg, protoToDB, dbToProto, nil)
+	code, err := g.Generate(msg, protoToDB, dbToProto, nil, false)
 	if err != nil {
 		t.Fatalf("Generate() error = %v", err)
 	}
@@ -69,12 +69,12 @@ func TestGenerateDeterministic(t *testing.T) {
 	protoToDB := graph.NewMapper("User", "User")
 	dbToProto := graph.NewMapper("User", "User")
 
-	code1, err := g.Generate(msg, protoToDB, dbToProto, nil)
+	code1, err := g.Generate(msg, protoToDB, dbToProto, nil, false)
 	if err != nil {
 		t.Fatalf("Generate() error = %v", err)
 	}
 
-	code2, err := g.Generate(msg, protoToDB, dbToProto, nil)
+	code2, err := g.Generate(msg, protoToDB, dbToProto, nil, false)
 	if err != nil {
 		t.Fatalf("Generate() error = %v", err)
 	}

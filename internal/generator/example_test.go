@@ -28,7 +28,7 @@ func ExampleGenerator_Generate() {
 	dbToProto := graph.NewMapper("User", "User")
 	typeMappings := map[string]string{}
 
-	code, _ := g.Generate(msg, protoToDB, dbToProto, typeMappings)
+	code, _ := g.Generate(msg, protoToDB, dbToProto, typeMappings, false)
 	fmt.Printf("Generated %d characters of code", len(code))
 	// Output: Generated 150 characters of code
 }
