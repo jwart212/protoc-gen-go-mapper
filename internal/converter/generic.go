@@ -1,9 +1,11 @@
 package converter
 
 import (
+	"fmt"
+
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"github.com/google/uuid"
 )
 
 // ConvertUUID converts pgtype.UUID to either string or *string based on type parameter T.
@@ -106,6 +108,58 @@ func ConvertFloat64[T float64 | *float64](v float64, valid bool) T {
 		case *float64:
 			return any(&v).(T)
 		}
+	}
+	var zero T
+	return zero
+}
+
+// ConvertStringToNumeric converts string to numeric types (int32, int64, float64).
+// This is useful for converting string fields from proto to numeric DB fields.
+// Returns zero value if parsing fails.
+func ConvertStringToNumeric[T int32 | int64 | float64](v string) T {
+	var result T
+	switch any(result).(type) {
+	case int32:
+		var n int32
+		if _, err := fmt.Sscanf(v, "%d", &n); err == nil {
+			result = any(n).(T)
+		}
+	case int64:
+		var n int64
+		if _, err := fmt.Sscanf(v, "%d", &n); err == nil {
+			result = any(n).(T)
+		}
+	case float64:
+		var n float64
+		if _, err := fmt.Sscanf(v, "%f", &n); err == nil {
+			result = any(n).(T)
+		}
+	}
+	return result
+}
+
+// ConvertStringToNumericPtr converts string to nullable numeric types (*int32, *int64, *float64).
+// Returns nil if parsing fails.
+func ConvertStringToNumericPtr[T *int32 | *int64 | *float64](v string) T {
+	switch any(T(nil)).(type) {
+	case *int32:
+		var n int32
+		if _, err := fmt.Sscanf(v, "%d", &n); err == nil {
+			return any(&n).(T)
+		}
+		return any((*int32)(nil)).(T)
+	case *int64:
+		var n int64
+		if _, err := fmt.Sscanf(v, "%d", &n); err == nil {
+			return any(&n).(T)
+		}
+		return any((*int64)(nil)).(T)
+	case *float64:
+		var n float64
+		if _, err := fmt.Sscanf(v, "%f", &n); err == nil {
+			return any(&n).(T)
+		}
+		return any((*float64)(nil)).(T)
 	}
 	var zero T
 	return zero

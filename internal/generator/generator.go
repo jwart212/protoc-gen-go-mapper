@@ -149,6 +149,21 @@ func (g *Generator) Generate(msg *schema.Message, protoToDB, dbToProto *graph.Ma
 				} else {
 					code += fmt.Sprintf("\t\t%s: ConvertText[string](src.%s),\n", protoFieldName, dbFieldName)
 				}
+				// String to numeric fields (string <-> pgtype.Int8, pgtype.Numeric)
+			} else if protoFieldType == "string" && (dbFieldType == "pgtype.Int8" || dbFieldType == "pgtype.Numeric") {
+				if field.Optional {
+					if dbFieldType == "pgtype.Int8" {
+						code += fmt.Sprintf("\t\t%s: ConvertStringToNumericPtr[*int64](src.%s),\n", protoFieldName, dbFieldName)
+					} else {
+						code += fmt.Sprintf("\t\t%s: ConvertStringToNumericPtr[*float64](src.%s),\n", protoFieldName, dbFieldName)
+					}
+				} else {
+					if dbFieldType == "pgtype.Int8" {
+						code += fmt.Sprintf("\t\t%s: ConvertStringToNumeric[int64](src.%s),\n", protoFieldName, dbFieldName)
+					} else {
+						code += fmt.Sprintf("\t\t%s: ConvertStringToNumeric[float64](src.%s),\n", protoFieldName, dbFieldName)
+					}
+				}
 				// Direct assignment for other types
 			} else {
 				code += "\t\t" + protoFieldName + ": src." + dbFieldName + ",\n"
