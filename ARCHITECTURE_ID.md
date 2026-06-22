@@ -1,6 +1,6 @@
 # Diagram Arsitektur protoc-gen-go-mapper
 
-## Arsitektur Tingkat Tinggi
+## Arsitektur
 
 Diagram ini menunjukkan alur keseluruhan dari pemanggilan protoc hingga output kode yang dihasilkan. Plugin mengoordinasikan semua komponen, mengoordinasikan pemuatan konfigurasi, parsing proto, resolusi tipe, pendaftaran converter, pemuatan field handler, dan pembuatan kode.
 
